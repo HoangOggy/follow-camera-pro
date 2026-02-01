@@ -1,49 +1,63 @@
 --[[ 
-    Follow Player Camera Script by HoangOggy
-    Safe List + Drag FIXED
-    
+    Follow Player Camera Script By HoangOggy
+    Safe List + Search + Hotkey GUI
 ]]
 
--- Services
+-- ================= SERVICES =================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- GUI Root
-local gui = Instance.new("ScreenGui")
+-- ================= SAVE =================
+local SAVE_FILE = "FollowCamera_SafeList.json"
+local safeList = {}
+
+local function loadSafe()
+    if isfile and isfile(SAVE_FILE) then
+        safeList = HttpService:JSONDecode(readfile(SAVE_FILE))
+    end
+end
+
+local function saveSafe()
+    if writefile then
+        writefile(SAVE_FILE, HttpService:JSONEncode(safeList))
+    end
+end
+
+loadSafe()
+
+-- ================= GUI ROOT =================
+local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 gui.ResetOnSpawn = false
-gui.Parent = game:GetService("CoreGui")
 
--- ================= DRAG SYSTEM (FIXED) =================
+-- ================= DRAG =================
 local function enableDrag(frame)
-    local dragging = false
-    local dragStart, startPos
+    local dragging, dragStart, startPos = false
 
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    frame.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            dragStart = input.Position
+            dragStart = i.Position
             startPos = frame.Position
         end
     end)
 
-    frame.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    frame.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
 
-    frame.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - dragStart
+    frame.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local d = i.Position - dragStart
             frame.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
+                startPos.X.Scale, startPos.X.Offset + d.X,
+                startPos.Y.Scale, startPos.Y.Offset + d.Y
             )
         end
     end)
@@ -51,15 +65,15 @@ end
 
 -- ================= MAIN GUI =================
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,180,0,145)
-main.Position = UDim2.new(0,30,1,-190)
+main.Size = UDim2.new(0,190,0,185)
+main.Position = UDim2.new(0,30,1,-230)
 main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
 enableDrag(main)
 
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
-title.Text = "🎯 Ambot Camera"
+title.Text = "🎯 Follow Camera"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 title.TextColor3 = Color3.new(1,1,1)
@@ -81,10 +95,22 @@ end
 local followBtn = newBtn("Enable Follow",40,Color3.fromRGB(0,140,255))
 local safeBtn   = newBtn("Safe List",78,Color3.fromRGB(80,80,80))
 
+-- 🔑 Hotkey UI
+local hotkeyBox = Instance.new("TextBox", main)
+hotkeyBox.Size = UDim2.new(1,-20,0,30)
+hotkeyBox.Position = UDim2.new(0,10,0,118)
+hotkeyBox.Text = "Hotkey: F"
+hotkeyBox.Font = Enum.Font.GothamBold
+hotkeyBox.TextSize = 13
+hotkeyBox.TextColor3 = Color3.new(1,1,1)
+hotkeyBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
+hotkeyBox.ClearTextOnFocus = true
+Instance.new("UICorner", hotkeyBox).CornerRadius = UDim.new(0,10)
+
 -- ================= SAFE GUI =================
 local safeGui = Instance.new("Frame", gui)
-safeGui.Size = UDim2.new(0,220,0,260)
-safeGui.Position = UDim2.new(0,220,1,-300)
+safeGui.Size = UDim2.new(0,230,0,300)
+safeGui.Position = UDim2.new(0,240,1,-340)
 safeGui.BackgroundColor3 = Color3.fromRGB(25,25,25)
 safeGui.Visible = false
 Instance.new("UICorner", safeGui).CornerRadius = UDim.new(0,14)
@@ -98,11 +124,21 @@ safeTitle.TextSize = 15
 safeTitle.TextColor3 = Color3.new(1,1,1)
 safeTitle.BackgroundTransparency = 1
 
+-- 🔍 Search box
+local searchBox = Instance.new("TextBox", safeGui)
+searchBox.Size = UDim2.new(1,-20,0,28)
+searchBox.Position = UDim2.new(0,10,0,32)
+searchBox.PlaceholderText = "🔍 Search player..."
+searchBox.Font = Enum.Font.Gotham
+searchBox.TextSize = 13
+searchBox.TextColor3 = Color3.new(1,1,1)
+searchBox.BackgroundColor3 = Color3.fromRGB(45,45,45)
+Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0,8)
+
 local list = Instance.new("ScrollingFrame", safeGui)
-list.Position = UDim2.new(0,6,0,35)
-list.Size = UDim2.new(1,-12,1,-75)
+list.Position = UDim2.new(0,6,0,65)
+list.Size = UDim2.new(1,-12,1,-105)
 list.ScrollBarThickness = 4
-list.CanvasSize = UDim2.new()
 list.BackgroundTransparency = 1
 
 local layout = Instance.new("UIListLayout", list)
@@ -111,7 +147,7 @@ layout.Padding = UDim.new(0,6)
 local refreshBtn = Instance.new("TextButton", safeGui)
 refreshBtn.Size = UDim2.new(1,-20,0,30)
 refreshBtn.Position = UDim2.new(0,10,1,-35)
-refreshBtn.Text = "🔄 Refresh Players"
+refreshBtn.Text = "🔄 Refresh"
 refreshBtn.Font = Enum.Font.GothamBold
 refreshBtn.TextSize = 13
 refreshBtn.TextColor3 = Color3.new(1,1,1)
@@ -122,31 +158,40 @@ Instance.new("UICorner", refreshBtn).CornerRadius = UDim.new(0,10)
 local following = false
 local holding = false
 local target = nil
-local safeList = {}
+local followKey = Enum.KeyCode.F
 
 local function refreshPlayers()
     for _,v in ipairs(list:GetChildren()) do
-        if v:IsA("TextButton") then
-            v:Destroy()
-        end
+        if v:IsA("TextButton") then v:Destroy() end
     end
 
     RunService.Heartbeat:Wait()
 
+    local filter = searchBox.Text:lower()
+
     for _,plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
+            if filter ~= "" and not plr.Name:lower():find(filter) then
+                continue
+            end
+
             local b = Instance.new("TextButton", list)
             b.Size = UDim2.new(1,-4,0,28)
             b.Text = plr.Name
             b.Font = Enum.Font.Gotham
             b.TextSize = 13
             b.TextColor3 = Color3.new(1,1,1)
-            b.BackgroundColor3 = safeList[plr.UserId] and Color3.fromRGB(0,150,80) or Color3.fromRGB(50,50,50)
+            b.BackgroundColor3 =
+                safeList[plr.UserId] and Color3.fromRGB(0,150,80)
+                or Color3.fromRGB(50,50,50)
             Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
 
             b.MouseButton1Click:Connect(function()
                 safeList[plr.UserId] = not safeList[plr.UserId]
-                b.BackgroundColor3 = safeList[plr.UserId] and Color3.fromRGB(0,150,80) or Color3.fromRGB(50,50,50)
+                saveSafe()
+                b.BackgroundColor3 =
+                    safeList[plr.UserId] and Color3.fromRGB(0,150,80)
+                    or Color3.fromRGB(50,50,50)
             end)
         end
     end
@@ -155,23 +200,46 @@ local function refreshPlayers()
     list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 8)
 end
 
-followBtn.MouseButton1Click:Connect(function()
-    following = not following
-    followBtn.Text = following and "Disable Follow" or "Enable Follow"
-    followBtn.BackgroundColor3 = following and Color3.fromRGB(220,60,60) or Color3.fromRGB(0,140,255)
-end)
-
+-- ================= EVENTS =================
 safeBtn.MouseButton1Click:Connect(function()
     safeGui.Visible = not safeGui.Visible
-    if safeGui.Visible then
-        refreshPlayers()
-    end
+    if safeGui.Visible then refreshPlayers() end
 end)
 
 refreshBtn.MouseButton1Click:Connect(refreshPlayers)
+searchBox:GetPropertyChangedSignal("Text"):Connect(refreshPlayers)
 
-UIS.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 and following then
+followBtn.MouseButton1Click:Connect(function()
+    following = not following
+    followBtn.Text = following and "Disable Follow" or "Enable Follow"
+    followBtn.BackgroundColor3 =
+        following and Color3.fromRGB(220,60,60)
+        or Color3.fromRGB(0,140,255)
+end)
+
+-- 🔑 Change hotkey
+hotkeyBox.FocusLost:Connect(function()
+    local key = hotkeyBox.Text:upper()
+    local code = Enum.KeyCode[key]
+    if code then
+        followKey = code
+        hotkeyBox.Text = "Hotkey: "..key
+    else
+        hotkeyBox.Text = "Hotkey: "..followKey.Name
+    end
+end)
+
+-- 🔑 Hotkey toggle
+UIS.InputBegan:Connect(function(i,gp)
+    if gp then return end
+    if i.KeyCode == followKey then
+        followBtn:Activate()
+    end
+end)
+
+-- ================= FOLLOW LOGIC =================
+UIS.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton2 and following then
         holding = true
         local mouse = UIS:GetMouseLocation()
         local best, dist = nil, math.huge
@@ -193,8 +261,8 @@ UIS.InputBegan:Connect(function(input)
     end
 end)
 
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+UIS.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton2 then
         holding = false
         target = nil
     end
