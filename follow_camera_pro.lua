@@ -59,7 +59,7 @@ enableDrag(main)
 
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
-title.Text = "🎯 Follow Camera"
+title.Text = "🎯 Ambot Camera"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 title.TextColor3 = Color3.new(1,1,1)
